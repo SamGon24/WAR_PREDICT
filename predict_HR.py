@@ -7,7 +7,7 @@ model = joblib.load("HR_predictor_model.pkl")
 scaler = joblib.load("scaler_HR.pkl")
 
 # Load the dataset
-data = pd.read_csv("mlb_batting_stats_2015_2023.csv")
+data = pd.read_csv("mlb_batting_stats_2015_2024.csv")
 
 # Ensure consistent column names (trim spaces if needed)
 data.columns = data.columns.str.strip()
