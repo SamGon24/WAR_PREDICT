@@ -3,32 +3,51 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
-import joblib
 
-# Load cleaned dataset
-data = pd.read_csv('mlb_hitters_2023.csv')
+# Load the updated dataset
+data = pd.read_csv("mlb_batting_stats_2015_2023.csv")
 
-# Select features and target
+# Ensure consistent column names (trim spaces if needed)
+data.columns = data.columns.str.strip()
+
+# Debug: Print column names to verify
+print("Dataset columns:", data.columns)
+
+# Check for required columns
+required_columns = ['Name', 'PA', 'Age', 'G', 'AB', 'H', 'HR', 'RBI', 'SB', 'OBP', 'SLG', 'OPS', 'WAR']
+missing_cols = [col for col in required_columns if col not in data.columns]
+if missing_cols:
+    raise KeyError(f"Missing columns in dataset: {missing_cols}")
+
+# Filter the dataset for only hitters (ensure "PA" is valid)
+data = data[data['PA'] > 0]
+
+# Select relevant features for prediction
 features = ['Age', 'G', 'AB', 'H', 'HR', 'RBI', 'SB', 'OBP', 'SLG', 'OPS']
 target = 'WAR'
+
+# Drop rows with missing values
+data = data.dropna(subset=features + [target])
 
 # Separate features and target variable
 X = data[features]
 y = data[target]
 
-# Standardize features
+# Standardize the features
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
-# Split dataset into training and testing sets
+# Split into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
 # Train the model
 model = RandomForestRegressor(n_estimators=100, random_state=42)
 model.fit(X_train, y_train)
 
-# Save model and scaler
-joblib.dump(model, 'mlb_war_model.pkl')
-joblib.dump(scaler, 'scaler.pkl')
+# Save the trained model and scaler for later use
+import joblib
+joblib.dump(model, "war_predictor_model.pkl")
+joblib.dump(scaler, "scaler_WAR.pkl")
 
-print("Model and scaler saved successfully.")
+print("Model training complete. Saved as 'war_predictor_model.pkl'.")
+
