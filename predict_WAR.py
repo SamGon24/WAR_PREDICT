@@ -7,7 +7,7 @@ model = joblib.load("war_predictor_model.pkl")
 scaler = joblib.load("scaler_WAR.pkl")
 
 # Load the dataset
-data = pd.read_csv("mlb_batting_stats_2015_2023.csv")
+data = pd.read_csv("mlb_batting_stats_2015_2024.csv")
 
 # Ensure consistent column names (trim spaces if needed)
 data.columns = data.columns.str.strip()
@@ -27,14 +27,14 @@ features = ['Age', 'G', 'AB', 'H', 'HR', 'RBI', 'SB', 'OBP', 'SLG', 'OPS']
 while True:
     # Ask for a player's name
     player_name = input("Enter player's name (or type 'exit' to quit): ").strip()
-
+    
     if player_name.lower() == "exit":
         print("Exiting program.")
         break
 
     # Find the most recent stats for the player
     player_data = data[data['Name'].str.strip().str.lower() == player_name.lower()]
-
+    
     if player_data.empty:
         print(f"No data found for player: {player_name}. Please try again.")
         continue  # Ask the user again
@@ -48,8 +48,13 @@ while True:
         # Scale features
         player_scaled = scaler.transform(player_features)
 
-        # Predict WAR
-        predicted_war = model.predict(player_scaled)[0]
+        # Predict SB
+        predicted_WAR = model.predict(player_scaled)[0]
 
-        print(f"Predicted WAR for {player_name} (based on most recent season): {predicted_war:.2f}")
-        break  # Exit loop after successful prediction
+        print(f"Predicted WAR for {player_name} (based on most recent season): {predicted_WAR:.2f}")
+    
+    # Ask if the user wants to continue
+    another = input("Do you want to check another player? (yes/no): ").strip().lower()
+    if another != 'yes':
+        print("Exiting program.")
+        break

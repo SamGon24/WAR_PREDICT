@@ -5,7 +5,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 
 # Load the updated dataset
-data = pd.read_csv("mlb_batting_stats_2015_2023.csv")
+data = pd.read_csv("mlb_batting_stats_2015_2024.csv")
 
 # Ensure consistent column names (trim spaces if needed)
 data.columns = data.columns.str.strip()
@@ -30,7 +30,7 @@ target = 'WAR'
 data = data.dropna(subset=features + [target])
 
 # Separate features and target variable
-X = data[features]
+X = data[features] 
 y = data[target]
 
 # Standardize the features
@@ -49,5 +49,5 @@ import joblib
 joblib.dump(model, "war_predictor_model.pkl")
 joblib.dump(scaler, "scaler_WAR.pkl")
 
-print("Model training complete. Saved as 'war_predictor_model.pkl'.")
+print("Model training complete. Saved as 'HR_predictor_model.pkl'.")
 
