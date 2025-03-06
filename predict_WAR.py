@@ -7,7 +7,7 @@ model = joblib.load("war_predictor_model.pkl")
 scaler = joblib.load("scaler_WAR.pkl")
 
 # Load the dataset
-data = pd.read_csv("mlb_batting_stats_2015_2024.csv")
+data = pd.read_csv("mlb_player_data_cleaned.csv")
 
 # Ensure consistent column names (trim spaces if needed)
 data.columns = data.columns.str.strip()
