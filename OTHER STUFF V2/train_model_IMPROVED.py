@@ -3,9 +3,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 import joblib
+import numpy as np
 
 # Load data
-data = pd.read_csv("merged_data_2015_2024.csv")
+data = pd.read_csv("sorted_dataset.csv")
 data.columns = data.columns.str.strip()
 
 # Filter hitters
@@ -20,15 +21,21 @@ data = data.dropna(subset=['Next_WAR'])
 
 # Feature engineering
 def create_features(df):
+    # Cumulative stats
     df['Career_G'] = df.groupby('Player')['G'].cumsum()
     df['Career_HR'] = df.groupby('Player')['HR'].cumsum()
     df['Career_SB'] = df.groupby('Player')['SB'].cumsum()
     
-    # Calculate 3-year rolling averages
-    df['OBP_3yr'] = df.groupby('Player')['OBP'].transform(
+    # Injury-related features
+    df['Injured'] = (df['AB'] < 200).astype(int)
+    df['AB_Drop'] = (df.groupby('Player')['AB'].shift(1) - df['AB']) / df.groupby('Player')['AB'].shift(1)
+    df['Seasons_Since_Injury'] = df.groupby('Player')['Injured'].cumsum()
+    
+    # Calculate 3-year rolling averages (excluding injury seasons)
+    df['OBP_3yr'] = df[df['AB'] >= 200].groupby('Player')['OBP'].transform(
         lambda x: x.rolling(3, min_periods=1).mean()
     )
-    df['SLG_3yr'] = df.groupby('Player')['SLG'].transform(
+    df['SLG_3yr'] = df[df['AB'] >= 200].groupby('Player')['SLG'].transform(
         lambda x: x.rolling(3, min_periods=1).mean()
     )
     
@@ -42,7 +49,7 @@ data = data.groupby('Player', group_keys=False).apply(create_features)
 # Final features
 features = [
     'Age', 'Career_G', 'Career_HR', 'Career_SB',
-    'OBP_3yr', 'SLG_3yr', 'WAR'
+    'OBP_3yr', 'SLG_3yr', 'WAR', 'Injured', 'AB_Drop', 'Seasons_Since_Injury'
 ]
 target = 'Next_WAR'
 
@@ -70,7 +77,6 @@ joblib.dump(model, "war_predictor_model_IMPROVED.pkl")
 joblib.dump(scaler, "scaler_war_IMPROVED.pkl")
 
 print("Model trained successfully!")
-
 
 
 

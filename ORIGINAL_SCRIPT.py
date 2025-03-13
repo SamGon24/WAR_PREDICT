@@ -2,11 +2,11 @@ import pandas as pd
 import joblib
 
 # Load NEW model and scaler
-model = joblib.load("war_predictor_model_IMPROVED.pkl")
-scaler = joblib.load("scaler_war_IMPROVED.pkl")
+model = joblib.load("war_predictor_model_ORIGINAL.pkl")
+scaler = joblib.load("scaler_war_ORIGINAL.pkl")
 
 # Load data
-data = pd.read_csv("merged_data_2015_2024.csv")
+data = pd.read_csv("sorted_dataset.csv")
 data.columns = data.columns.str.strip()
 data = data[data['PA'] > 0]
 
@@ -55,6 +55,3 @@ while True:
     
     predicted_war = model.predict(X_scaled)[0]
     print(f"Predicted 2025 WAR: {predicted_war:.2f}\n")
-
-
-
