@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
@@ -37,11 +36,9 @@ def create_features(df):
     df['Injured_Season'] = ((df['G'] < 50) | (df['PA'] < 200)).astype(int)
     
     # Calculate 3-year rolling averages, excluding injured seasons
-    # Use .where() to mask injured seasons as NaN
     df['OBP_healthy'] = df['OBP'].where(df['Injured_Season'] == 0)
     df['SLG_healthy'] = df['SLG'].where(df['Injured_Season'] == 0)
     
-    # Rolling average with min_periods=1 (allow partial windows)
     df['OBP_3yr'] = df.groupby('Player')['OBP_healthy'].transform(
         lambda x: x.rolling(3, min_periods=1).mean()
     )
