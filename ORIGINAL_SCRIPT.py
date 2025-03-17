@@ -6,7 +6,7 @@ model = joblib.load("war_predictor_model_ORIGINAL.pkl")
 scaler = joblib.load("scaler_war_ORIGINAL.pkl")
 
 # Load data
-data = pd.read_csv("sorted_dataset.csv")
+data = pd.read_csv("sorted_dataset copy.csv")
 data.columns = data.columns.str.strip()
 data = data[data['PA'] > 0]
 
