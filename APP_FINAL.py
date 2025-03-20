@@ -88,7 +88,7 @@ def index():
                     <button type='submit'>{suggested_name}</button>
                 </form>
                 """
-                return render_template("index.html", error=Markup(f"Player '{player_name}' not found. Did you mean {suggestion_html}?"))
+                return render_template("index.html", error=Markup(f"Player '{player_name}' not found. Did you mean{suggestion_html}?"))
 
             return render_template("index.html", error=f"Player '{player_name}' not found.")
 
