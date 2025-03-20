@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request
+from markupsafe import Markup
 import pandas as pd
 import joblib
+import difflib
 
 app = Flask(__name__)
 
@@ -65,7 +67,9 @@ def prepare_prediction_data(df):
     
     return latest_data[['Player', 'Age', 'Career_G', 'Career_HR', 'Career_SB', 'OBP_3yr', 'SLG_3yr', 'WAR', 'Is_Rookie', 'Injured_Season']]
 
+# Prepare player data
 prediction_data = prepare_prediction_data(data)
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -73,12 +77,27 @@ def index():
         player = prediction_data[prediction_data['Player'].str.lower() == player_name]
 
         if player.empty:
+            # Check for similar names using difflib
+            close_matches = difflib.get_close_matches(player_name, prediction_data['Player'].str.lower(), n=1, cutoff=0.6)
+
+            if close_matches:
+                suggested_name = close_matches[0].title()  # Capitalize correctly
+                suggestion_html = f"""
+                <form method='post'>
+                    <input type='hidden' name='player_name' value='{suggested_name}'>
+                    <button type='submit'>{suggested_name}</button>
+                </form>
+                """
+                return render_template("index.html", error=Markup(f"Player '{player_name}' not found. Did you mean {suggestion_html}?"))
+
             return render_template("index.html", error=f"Player '{player_name}' not found.")
 
+        # Prepare input data for prediction
         features = ['Age', 'Career_G', 'Career_HR', 'Career_SB', 'OBP_3yr', 'SLG_3yr', 'WAR', 'Is_Rookie', 'Injured_Season']
         X = player[features].values.reshape(1, -1)
         X_scaled = scaler.transform(X)
 
+        # Predict WAR
         predicted_war = model.predict(X_scaled)[0]
 
         return render_template("result.html", player=player_name.title(), war=round(predicted_war, 2))
@@ -87,3 +106,5 @@ def index():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+
