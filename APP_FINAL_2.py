@@ -10,7 +10,7 @@ scaler = joblib.load("scaler_war_INJURY_ADJUSTED.pkl")
 league_avgs = joblib.load("league_avgs_INJURY_ADJUSTED.pkl")
 
 # Load data
-data = pd.read_csv("sorted_dataset copy.csv")
+data = pd.read_csv("sorted_dataset.csv")
 data.columns = data.columns.str.strip()
 data = data[data['PA'] > 0]
 
@@ -30,13 +30,24 @@ def prepare_prediction_data(df):
         lambda x: x[~x['Injured_Season'].astype(bool)].tail(3)[['OBP', 'SLG']].mean()
     ).reset_index()
     three_year_avg.columns = ['Player', 'OBP_3yr', 'SLG_3yr']
-    
+
     # Latest season data (2024)
     latest_data = df.sort_values(['Player', 'Year']).groupby('Player').last().reset_index()
+    
+    # Identify injured players in 2024
+    injured_players_2024 = latest_data[(latest_data['Year'] == 2024) & ((latest_data['G'] < 50) | (latest_data['PA'] < 200))]['Player']
+    
+    # Get last valid season (2023) for injured players
+    last_valid_season = df[df['Player'].isin(injured_players_2024) & (df['Year'] == 2023)]
+    
+    # Replace injured 2024 season with 2023 stats
+    latest_data.loc[latest_data['Player'].isin(injured_players_2024)] = last_valid_season.set_index('Player').reindex(latest_data['Player'].values).reset_index()
+    
+    # Merge career stats and 3-year averages
     latest_data = latest_data.merge(career_stats, on='Player')
     latest_data = latest_data.merge(three_year_avg, on='Player')
     
-    # Age for next season (2025)
+    # Update age for 2025
     latest_data['Age'] = latest_data['Age'] + 1
     
     # Mark rookies (Career_G = current season's G)
@@ -55,8 +66,6 @@ def prepare_prediction_data(df):
     return latest_data[['Player', 'Age', 'Career_G', 'Career_HR', 'Career_SB', 'OBP_3yr', 'SLG_3yr', 'WAR', 'Is_Rookie', 'Injured_Season']]
 
 prediction_data = prepare_prediction_data(data)
-
-# Prediction loop
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -66,7 +75,7 @@ def index():
         if player.empty:
             return render_template("index.html", error=f"Player '{player_name}' not found.")
 
-        features = ['Age', 'Career_G', 'Career_HR', 'Career_SB', 'OBP_3yr', 'SLG_3yr', 'WAR']
+        features = ['Age', 'Career_G', 'Career_HR', 'Career_SB', 'OBP_3yr', 'SLG_3yr', 'WAR', 'Is_Rookie', 'Injured_Season']
         X = player[features].values.reshape(1, -1)
         X_scaled = scaler.transform(X)
 
