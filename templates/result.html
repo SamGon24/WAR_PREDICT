@@ -10,10 +10,16 @@
     <div class="container mt-5">
         <div class="card shadow-lg p-4 text-center">
             <h1 class="text-success">Prediction for {{ player }}</h1>
+            
+            {% if player_image %}
+            <div class="mb-3">
+                <img src="{{ player_image }}" alt="{{ player }}" class="img-thumbnail" style="max-height: 200px;">
+            </div>
+            {% endif %}
+            
             <p class="fs-3"> <strong class="text-primary"> WAR: {{ war }}</strong></p>
             <a href="/" class="btn btn-secondary mt-3">Try with another player</a>
         </div>
     </div>
 </body>
 </html>
-
