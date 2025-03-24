@@ -1,3 +1,15 @@
 # WAR_PREDICT
-Machine Learning model that estimates a player's WAR and HR in a season using data provided by the libraries pybaseball. 
-The training model is train_model.py and the scripts for both the WAR and HR are predict_WAR.py and predict_WAR.py
+Machine Learning model that estimates a player's WAR and HR in a season using data scrapped from BaseballReference. 
+The model was trained using the script alt_trainer_2.py and the main script is alt_predict_2.py.
+
+The main code was done is Python. The primary philosophy of this project is to effectively predict a baseball player's 
+Wins Above Replacement (WAR) by scaling variables and using a Random Forest Regressor to make accurate predictions.
+
+Until now, the model is only applicable to hitters and not pitcher. Also, defensive stats were avoided for this 
+preliminar analysis.
+
+The were implemented in APP_FINAL.py which serves as the back-end for a website that allows a simple to use emo of the script.
+
+Here is the link: https://web-production-1a459.up.railway.app/
+
+Special thanks to https://www.baseball-reference.com/ for provinding the data for this project.
