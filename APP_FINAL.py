@@ -1,10 +1,14 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, send_from_directory
 from markupsafe import Markup
 import pandas as pd
 import joblib
 import difflib
+import os
 
 app = Flask(__name__)
+
+# Configuration
+app.config['PLAYER_IMAGES'] = 'static/player_images'
 
 # Load model, scaler, and league averages
 model = joblib.load("war_predictor_model_INJURY_ADJUSTED.pkl")
@@ -67,6 +71,27 @@ def prepare_prediction_data(df):
     
     return latest_data[['Player', 'Age', 'Career_G', 'Career_HR', 'Career_SB', 'OBP_3yr', 'SLG_3yr', 'WAR', 'Is_Rookie', 'Injured_Season']]
 
+def get_player_image(player_name):
+    """Check if player image exists and return the path"""
+    # Standardize filename: lowercase, replace spaces with underscores, remove special chars
+    filename = f"{player_name.lower().replace(' ', '_').replace('.', '').replace("'", '')}.jpg"
+    image_path = os.path.join(app.config['PLAYER_IMAGES'], filename)
+    
+    # Check for variations (first initial last name)
+    if not os.path.exists(image_path):
+        # Try first initial last name (e.g., "m_trout.jpg" for "Mike Trout")
+        parts = player_name.split()
+        if len(parts) > 1:
+            short_name = f"{parts[0][0]}_{parts[-1]}".lower()
+            alt_filename = f"{short_name}.jpg"
+            alt_path = os.path.join(app.config['PLAYER_IMAGES'], alt_filename)
+            if os.path.exists(alt_path):
+                return f"/static/player_images/{alt_filename}"
+    
+    if os.path.exists(image_path):
+        return f"/static/player_images/{filename}"
+    return None
+
 # Prepare player data
 prediction_data = prepare_prediction_data(data)
 
@@ -77,20 +102,30 @@ def index():
         player = prediction_data[prediction_data['Player'].str.lower() == player_name]
 
         if player.empty:
-            # Check for similar names using difflib
-            close_matches = difflib.get_close_matches(player_name, prediction_data['Player'].str.lower(), n=1, cutoff=0.6)
-
+            close_matches = difflib.get_close_matches(
+                player_name, 
+                prediction_data['Player'].str.lower(), 
+                n=1, 
+                cutoff=0.6
+            )
+            
             if close_matches:
-                suggested_name = close_matches[0].title()  # Capitalize correctly
+                suggested_name = close_matches[0].title()
                 suggestion_html = f"""
                 <form method='post'>
                     <input type='hidden' name='player_name' value='{suggested_name}'>
-                    <button type='submit'>{suggested_name}</button>
+                    <button type='submit' class='btn btn-link p-0'>{suggested_name}</button>
                 </form>
                 """
-                return render_template("index.html", error=Markup(f"Player '{player_name}' not found. Did you mean{suggestion_html}?"))
-
-            return render_template("index.html", error=f"Player '{player_name}' not found.")
+                return render_template(
+                    "index.html", 
+                    error=Markup(f"Player '{player_name.title()}' not found. Did you mean {suggestion_html}?")
+                )
+            
+            return render_template(
+                "index.html", 
+                error=f"Player '{player_name.title()}' not found."
+            )
 
         # Prepare input data for prediction
         features = ['Age', 'Career_G', 'Career_HR', 'Career_SB', 'OBP_3yr', 'SLG_3yr', 'WAR', 'Is_Rookie', 'Injured_Season']
@@ -99,12 +134,27 @@ def index():
 
         # Predict WAR
         predicted_war = model.predict(X_scaled)[0]
+        
+        # Get player image
+        player_display_name = player.iloc[0]['Player']  # Get properly capitalized name
+        player_image = get_player_image(player_display_name)
 
-        return render_template("result.html", player=player_name.title(), war=round(predicted_war, 2))
+        return render_template(
+            "result.html", 
+            player=player_display_name,
+            war=round(predicted_war, 2),
+            player_image=player_image
+        )
 
     return render_template("index.html")
 
+@app.route('/player_images/<filename>')
+def serve_player_image(filename):
+    return send_from_directory(app.config['PLAYER_IMAGES'], filename)
+
 if __name__ == "__main__":
+    # Create player_images directory if it doesn't exist
+    os.makedirs(app.config['PLAYER_IMAGES'], exist_ok=True)
     app.run(debug=True)
 
 
