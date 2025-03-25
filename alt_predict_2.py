@@ -7,7 +7,7 @@ scaler = joblib.load("scaler_war_INJURY_ADJUSTED.pkl")
 league_avgs = joblib.load("league_avgs_INJURY_ADJUSTED.pkl")
 
 # Load data
-data = pd.read_csv("sorted_dataset.csv")
+data = pd.read_csv("cleaned_dataset_2024_players.csv")
 data.columns = data.columns.str.strip()
 data = data[data['PA'] > 0]
 
