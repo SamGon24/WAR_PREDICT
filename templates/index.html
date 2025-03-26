@@ -50,6 +50,9 @@
         .search-box {
             padding: 30px;
         }
+        .header_paragraph {
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -58,6 +61,9 @@
             <div class="card-body search-box">
                 <h1 class="text-center text-primary mb-4">MLB WAR Predictor</h1>
                 
+                <p class="header_paragraph">This is a MLB Machine Leaning prediction tool that uses MLB players stats (Hits, Home Runs and Stolen Bases) and WAR to estimate a Player's performance for the 2025 season </p>
+                   
+
                 <form action="/" method="POST">
                     <div class="mb-3">
                         <input type="text" class="form-control form-control-lg" 
@@ -86,12 +92,14 @@
                                      class="player-img mb-2">
                                 <div class="player-name">{{ player }}</div>
                             </button>
+
                         </form>
                     </div>
                     {% endfor %}
                 </div>
             </div>
         </div>
+        <p>Created by Samuel I. Gonzalez Pineda</p>
     </div>
 </body>
 </html>
