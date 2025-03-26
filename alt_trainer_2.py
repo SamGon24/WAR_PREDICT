@@ -9,7 +9,7 @@ import joblib
 data = pd.read_csv("sorted_dataset.csv")
 data.columns = data.columns.str.strip()
 
-# Filter hitters
+# Filter hitters (dataset is already clean, but just in case...)
 data = data[data['PA'] > 0]
 
 # Sort chronologically

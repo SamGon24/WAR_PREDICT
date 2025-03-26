@@ -8,7 +8,7 @@ import random
 
 app = Flask(__name__)
 
-# Configuration
+# Configuration for the player images
 app.config['PLAYER_IMAGES'] = 'static/player_images'
 
 # Load model, scaler, and league averages
@@ -22,7 +22,7 @@ data.columns = data.columns.str.strip()
 data = data[data['PA'] > 0]
 
 def prepare_prediction_data(df):
-    # Career totals
+    # Prepare Career totals
     career_stats = df.groupby('Player').agg(
         Career_G=('G', 'sum'),
         Career_HR=('HR', 'sum'),
@@ -157,7 +157,7 @@ def index():
             player_image=player_image
         )
 
-    # GET request - show form with 5 random suggestions (only players with images)
+    # GET request show form with 5 random suggestions (only players with images) 
     return render_template(
         "index.html",
         suggested_players=random.sample(players_with_images, min(5, len(players_with_images)))
