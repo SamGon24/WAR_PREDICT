@@ -102,11 +102,26 @@ model = RandomForestRegressor(n_estimators=200, max_depth=10, random_state=42)
 model.fit(X_train_scaled, y_train)
 
 # Save artifacts
-joblib.dump(model, "war_predictor_model_INJURY_ADJUSTED.pkl")
-joblib.dump(scaler, "scaler_war_INJURY_ADJUSTED.pkl")
+joblib.dump(model, "war_predictor_model_INJURY_ADJUSTED2.pkl")
+joblib.dump(scaler, "scaler_war_INJURY_ADJUSTED2.pkl")
 joblib.dump(
     {'league_avg_obp': league_avg_obp, 'league_avg_slg': league_avg_slg},
-    "league_avgs_INJURY_ADJUSTED.pkl"
+    "league_avgs_INJURY_ADJUSTED2.pkl"
 )
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+feature_importances = model.feature_importances_
+features = ['Age', 'Career_G', 'Career_HR', 'Career_SB', 'OBP_3yr', 'SLG_3yr', 'WAR', 'Is_Rookie', 'Injured_Season']
+indices = np.argsort(feature_importances)[::-1]
+
+plt.figure(figsize=(10,5))
+plt.title("Feature Importance in WAR Prediction")
+plt.bar(range(len(features)), feature_importances[indices], align="center")
+plt.xticks(range(len(features)), np.array(features)[indices], rotation=45)
+plt.ylabel("Importance Score")
+plt.show()
+
 
 print("Model trained successfully with injury adjustment!")
