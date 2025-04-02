@@ -29,8 +29,8 @@ def prepare_prediction_data(df):
 
     latest_data = df.sort_values(['Player', 'Year']).groupby('Player').last().reset_index()
     
-    injured_players_2024 = latest_data[(latest_data['Year'] == 2024) & ((latest_data['G'] < 50) | (latest_data['PA'] < 200))]['Player']
-    last_valid_season = df[df['Player'].isin(injured_players_2024) & (df['Year'] == 2023)]
+    injured_players_2024 = latest_data[(latest_data['Year'] == 2023) & ((latest_data['G'] < 50) | (latest_data['PA'] < 200))]['Player']
+    last_valid_season = df[df['Player'].isin(injured_players_2024) & (df['Year'] == 2022)]
     latest_data.loc[latest_data['Player'].isin(injured_players_2024)] = last_valid_season.set_index('Player').reindex(latest_data['Player'].values).reset_index()
     
     latest_data = latest_data.merge(career_stats, on='Player')
@@ -81,7 +81,7 @@ while True:
     injured_seasons = data[(data['Player'] == player_name) & (data['Year'] != 2020) & ((data['G'] < 50) | (data['PA'] < 200))]
     plt.scatter(injured_seasons['Year'], injured_seasons['WAR'], color='red', label='Injury Season', zorder=3)
     
-    plt.scatter([2025], [predicted_war], color='green', marker='D', s=100, label='Predicted 2025 WAR')
+    plt.scatter([2024], [predicted_war], color='green', marker='D', s=100, label='Predicted 2024 WAR')
     
     plt.xlabel("Year")
     plt.ylabel("WAR")
