@@ -21,6 +21,11 @@ data = pd.read_csv("cleaned_dataset_2024_players.csv")
 data.columns = data.columns.str.strip()
 data = data[data['PA'] > 0]
 
+def get_player_history(player_name):
+    """Get historical WAR data for a player"""
+    player_data = data[data['Player'] == player_name].sort_values('Year')
+    return player_data[['Year', 'WAR']].values.tolist()
+
 def prepare_prediction_data(df):
     # Prepare Career totals
     career_stats = df.groupby('Player').agg(
@@ -28,7 +33,7 @@ def prepare_prediction_data(df):
         Career_HR=('HR', 'sum'),
         Career_SB=('SB', 'sum')
     ).reset_index()
-    
+
     # Detect injured seasons (G < 50 or PA < 200)
     df['Injured_Season'] = ((df['G'] < 50) | (df['PA'] < 200)).astype(int)
     
@@ -170,5 +175,4 @@ def serve_player_image(filename):
 if __name__ == "__main__":
     os.makedirs(app.config['PLAYER_IMAGES'], exist_ok=True)
     app.run(debug=True)
-
 
