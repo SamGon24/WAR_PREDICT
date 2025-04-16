@@ -34,7 +34,7 @@ def prepare_prediction_data(df):
         Career_SB=('SB', 'sum')
     ).reset_index()
 
-    # Detect injured seasons (G < 50 or PA < 200)
+    # detect injured seasons (G < 50 or PA < 200)
     df['Injured_Season'] = ((df['G'] < 50) | (df['PA'] < 200)).astype(int)
     
     # 3-year averages (exclude injured seasons)
@@ -43,7 +43,7 @@ def prepare_prediction_data(df):
     ).reset_index()
     three_year_avg.columns = ['Player', 'OBP_3yr', 'SLG_3yr']
 
-    # Latest season data (2024)
+    # Latest season data ((2024))
     latest_data = df.sort_values(['Player', 'Year']).groupby('Player').last().reset_index()
     
     # Identify injured players in 2024
@@ -151,7 +151,7 @@ def index():
         # Predict WAR
         predicted_war = model.predict(X_scaled)[0]
         
-        # Get player image
+        # Get x player image
         player_display_name = player.iloc[0]['Player']
         player_image = get_player_image_path(player_display_name)
 
@@ -162,7 +162,7 @@ def index():
             player_image=player_image
         )
 
-    # GET request show form with 5 random suggestions (only players with images) 
+    # GET request show form with 5 random suggestions only players with images. I dont have all of them
     return render_template(
         "index.html",
         suggested_players=random.sample(players_with_images, min(5, len(players_with_images)))
