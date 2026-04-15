@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.env
+
+# Model artifacts
+*.pkl
+
+# Datasets
+*.csv
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.claude/
