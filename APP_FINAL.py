@@ -6,6 +6,8 @@ import difflib
 import os
 import random
 
+from features import prepare_prediction_data, FEATURES
+
 app = Flask(__name__)
 
 # Configuration for the player images
@@ -21,61 +23,6 @@ data = pd.read_csv("cleaned_dataset_2024_players.csv")
 data.columns = data.columns.str.strip()
 data = data[data['PA'] > 0]
 
-def get_player_history(player_name):
-    """Get historical WAR data for a player"""
-    player_data = data[data['Player'] == player_name].sort_values('Year')
-    return player_data[['Year', 'WAR']].values.tolist()
-
-def prepare_prediction_data(df):
-    # Prepare Career totals
-    career_stats = df.groupby('Player').agg(
-        Career_G=('G', 'sum'),
-        Career_HR=('HR', 'sum'),
-        Career_SB=('SB', 'sum')
-    ).reset_index()
-
-    # detect injured seasons (G < 50 or PA < 200)
-    df['Injured_Season'] = ((df['G'] < 50) | (df['PA'] < 200)).astype(int)
-    
-    # 3-year averages (exclude injured seasons)
-    three_year_avg = df.groupby('Player').apply(
-        lambda x: x[~x['Injured_Season'].astype(bool)].tail(3)[['OBP', 'SLG']].mean()
-    ).reset_index()
-    three_year_avg.columns = ['Player', 'OBP_3yr', 'SLG_3yr']
-
-    # Latest season data ((2024))
-    latest_data = df.sort_values(['Player', 'Year']).groupby('Player').last().reset_index()
-    
-    # Identify injured players in 2024
-    injured_players_2024 = latest_data[(latest_data['Year'] == 2024) & ((latest_data['G'] < 50) | (latest_data['PA'] < 200))]['Player']
-    
-    # Get last valid season (2023) for injured players
-    last_valid_season = df[df['Player'].isin(injured_players_2024) & (df['Year'] == 2023)]
-    
-    # Replace injured 2024 season with 2023 stats
-    latest_data.loc[latest_data['Player'].isin(injured_players_2024)] = last_valid_season.set_index('Player').reindex(latest_data['Player'].values).reset_index()
-    
-    # Merge career stats and 3-year averages
-    latest_data = latest_data.merge(career_stats, on='Player')
-    latest_data = latest_data.merge(three_year_avg, on='Player')
-    
-    # Update age for 2025
-    latest_data['Age'] = latest_data['Age'] + 1
-    
-    # Mark rookies (Career_G = current season's G)
-    latest_data['Is_Rookie'] = (latest_data['Career_G'] == latest_data['G']).astype(int)
-    
-    # Impute missing data for rookies
-    latest_data.loc[latest_data['Is_Rookie'] == 1, 'OBP_3yr'] = league_avgs['league_avg_obp']
-    latest_data.loc[latest_data['Is_Rookie'] == 1, 'SLG_3yr'] = league_avgs['league_avg_slg']
-    latest_data.loc[latest_data['Is_Rookie'] == 1, 'Career_G'] = 0
-    latest_data.loc[latest_data['Is_Rookie'] == 1, 'Career_HR'] = 0
-    latest_data.loc[latest_data['Is_Rookie'] == 1, 'Career_SB'] = 0
-    
-    # Detect injured season (G < 50 or PA < 200)
-    latest_data['Injured_Season'] = ((latest_data['G'] < 50) | (latest_data['PA'] < 200)).astype(int)
-    
-    return latest_data[['Player', 'Age', 'Career_G', 'Career_HR', 'Career_SB', 'OBP_3yr', 'SLG_3yr', 'WAR', 'Is_Rookie', 'Injured_Season']]
 
 def get_player_image_path(player_name):
     """Check if player image exists and return the path if found, None otherwise"""
@@ -101,7 +48,7 @@ def get_players_with_images():
     return players_with_images
 
 # Prepare player data
-prediction_data = prepare_prediction_data(data)
+prediction_data = prepare_prediction_data(data, league_avgs)
 
 @app.context_processor
 def utility_processor():
@@ -144,8 +91,7 @@ def index():
             )
 
         # Prepare input data for prediction
-        features = ['Age', 'Career_G', 'Career_HR', 'Career_SB', 'OBP_3yr', 'SLG_3yr', 'WAR', 'Is_Rookie', 'Injured_Season']
-        X = player[features].values.reshape(1, -1)
+        X = player[FEATURES].values.reshape(1, -1)
         X_scaled = scaler.transform(X)
 
         # Predict WAR
