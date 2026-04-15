@@ -102,8 +102,8 @@ model = RandomForestRegressor(n_estimators=200, max_depth=10, random_state=42)
 model.fit(X_train_scaled, y_train)
 
 # Save artifacts
-joblib.dump(model, "war_predictor_model_INJURY_ADJUSTED2.pkl")
-joblib.dump(scaler, "scaler_war_INJURY_ADJUSTED2.pkl")
+joblib.dump(model, "war_predictor_model_INJURY_ADJUSTED.pkl")
+joblib.dump(scaler, "scaler_war_INJURY_ADJUSTED.pkl")
 joblib.dump(
     {'league_avg_obp': league_avg_obp, 'league_avg_slg': league_avg_slg},
     "league_avgs_INJURY_ADJUSTED.pkl"
