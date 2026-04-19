@@ -72,6 +72,16 @@ def create_features(df):
         lambda x: x.fillna(x.mean())
     )
 
+    # WAR trajectory: change vs two seasons ago (0 if insufficient history)
+    df['WAR_trend'] = (
+        df['WAR'] - df.groupby('Player')['WAR'].shift(2)
+    ).fillna(0)
+
+    # Career peak WAR up to and including the current row (no lookahead)
+    df['Peak_WAR'] = df.groupby('Player')['WAR'].transform(
+        lambda x: x.expanding().max()
+    )
+
     # Age for next season
     df['Age'] = df['Age'] + 1
     
@@ -85,6 +95,7 @@ def create_features(df):
     df.loc[df['Is_Rookie'] == 1, 'SLG_3yr'] = league_avg_slg
     df.loc[df['Is_Rookie'] == 1, 'BB_rate'] = league_avg_bb_rate
     df.loc[df['Is_Rookie'] == 1, 'K_rate'] = league_avg_k_rate
+    df.loc[df['Is_Rookie'] == 1, 'WAR_trend'] = 0
     df.loc[df['Is_Rookie'] == 1, 'Career_G'] = 0
     df.loc[df['Is_Rookie'] == 1, 'Career_HR'] = 0
     df.loc[df['Is_Rookie'] == 1, 'Career_SB'] = 0
@@ -98,8 +109,8 @@ test = test.groupby('Player', group_keys=False).apply(create_features)
 # Final features (add Is_Rookie and Injured_Season)
 features = [
     'Age', 'Career_G', 'Career_HR', 'Career_SB',
-    'OBP_3yr', 'SLG_3yr', 'OPS_plus_3yr', 'WAR', 'Is_Rookie', 'Injured_Season',
-    'BB_rate', 'K_rate',
+    'OBP_3yr', 'SLG_3yr', 'OPS_plus_3yr', 'WAR', 'WAR_trend', 'Peak_WAR',
+    'Is_Rookie', 'Injured_Season', 'BB_rate', 'K_rate',
 ]
 target = 'Next_WAR'
 

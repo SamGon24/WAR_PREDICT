@@ -10,8 +10,8 @@ import pandas as pd
 # Ordered feature list expected by the model
 FEATURES = [
     'Age', 'Career_G', 'Career_HR', 'Career_SB',
-    'OBP_3yr', 'SLG_3yr', 'OPS_plus_3yr', 'WAR', 'Is_Rookie', 'Injured_Season',
-    'BB_rate', 'K_rate',
+    'OBP_3yr', 'SLG_3yr', 'OPS_plus_3yr', 'WAR', 'WAR_trend', 'Peak_WAR',
+    'Is_Rookie', 'Injured_Season', 'BB_rate', 'K_rate',
 ]
 
 
@@ -97,12 +97,29 @@ def prepare_prediction_data(df, league_avgs):
         .values
     )
 
+    # WAR trajectory: change vs two seasons ago (0 if insufficient history)
+    war_sorted = df.sort_values(['Player', 'Year']).groupby('Player')['WAR']
+    war_2yr_ago = war_sorted.apply(
+        lambda x: x.iloc[-3] if len(x) >= 3 else x.iloc[0]
+    )
+    latest['WAR_trend'] = (
+        war_sorted.last() - war_2yr_ago
+    ).fillna(0).reindex(latest['Player'].values).values
+
+    # Career peak WAR
+    latest['Peak_WAR'] = (
+        df.groupby('Player')['WAR'].max()
+        .reindex(latest['Player'].values)
+        .values
+    )
+
     # Impute rookies with league-average rates and zero career counting stats
     rookie_mask = latest['Is_Rookie'] == 1
     latest.loc[rookie_mask, 'OBP_3yr'] = league_avgs['league_avg_obp']
     latest.loc[rookie_mask, 'SLG_3yr'] = league_avgs['league_avg_slg']
     latest.loc[rookie_mask, 'BB_rate'] = league_avgs['league_avg_bb_rate']
     latest.loc[rookie_mask, 'K_rate'] = league_avgs['league_avg_k_rate']
+    latest.loc[rookie_mask, 'WAR_trend'] = 0
     latest.loc[rookie_mask, ['Career_G', 'Career_HR', 'Career_SB']] = 0
 
     # Current-season injury flag (used as a model feature)
