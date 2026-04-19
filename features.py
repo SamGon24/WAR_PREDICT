@@ -11,6 +11,7 @@ import pandas as pd
 FEATURES = [
     'Age', 'Career_G', 'Career_HR', 'Career_SB',
     'OBP_3yr', 'SLG_3yr', 'WAR', 'Is_Rookie', 'Injured_Season',
+    'BB_rate', 'K_rate',
 ]
 
 
@@ -75,10 +76,16 @@ def prepare_prediction_data(df, league_avgs):
     # Rookie flag: player has only one season of MLB data
     latest['Is_Rookie'] = (latest['Career_G'] == latest['G']).astype(int)
 
+    # Plate discipline rates
+    latest['BB_rate'] = latest['BB'] / latest['PA']
+    latest['K_rate'] = latest['SO'] / latest['PA']
+
     # Impute rookies with league-average rates and zero career counting stats
     rookie_mask = latest['Is_Rookie'] == 1
     latest.loc[rookie_mask, 'OBP_3yr'] = league_avgs['league_avg_obp']
     latest.loc[rookie_mask, 'SLG_3yr'] = league_avgs['league_avg_slg']
+    latest.loc[rookie_mask, 'BB_rate'] = league_avgs['league_avg_bb_rate']
+    latest.loc[rookie_mask, 'K_rate'] = league_avgs['league_avg_k_rate']
     latest.loc[rookie_mask, ['Career_G', 'Career_HR', 'Career_SB']] = 0
 
     # Current-season injury flag (used as a model feature)

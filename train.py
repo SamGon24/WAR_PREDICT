@@ -26,6 +26,8 @@ test = data[data['Year'] == 2023]
 # Compute league averages from TRAINING DATA ONLY
 league_avg_obp = train['OBP'].mean()
 league_avg_slg = train['SLG'].mean()
+league_avg_bb_rate = (train['BB'] / train['PA']).mean()
+league_avg_k_rate = (train['SO'] / train['PA']).mean()
 
 def create_features(df):
     # Calculate cumulative stats
@@ -56,7 +58,11 @@ def create_features(df):
     df['SLG_3yr'] = df.groupby('Player')['SLG_3yr'].transform(
         lambda x: x.fillna(x.mean())
     )
-    
+
+    # Plate discipline rates (PA-normalized)
+    df['BB_rate'] = df['BB'] / df['PA']
+    df['K_rate'] = df['SO'] / df['PA']
+
     # Age for next season
     df['Age'] = df['Age'] + 1
     
@@ -68,6 +74,8 @@ def create_features(df):
     # Impute missing data for rookies
     df.loc[df['Is_Rookie'] == 1, 'OBP_3yr'] = league_avg_obp
     df.loc[df['Is_Rookie'] == 1, 'SLG_3yr'] = league_avg_slg
+    df.loc[df['Is_Rookie'] == 1, 'BB_rate'] = league_avg_bb_rate
+    df.loc[df['Is_Rookie'] == 1, 'K_rate'] = league_avg_k_rate
     df.loc[df['Is_Rookie'] == 1, 'Career_G'] = 0
     df.loc[df['Is_Rookie'] == 1, 'Career_HR'] = 0
     df.loc[df['Is_Rookie'] == 1, 'Career_SB'] = 0
@@ -81,7 +89,8 @@ test = test.groupby('Player', group_keys=False).apply(create_features)
 # Final features (add Is_Rookie and Injured_Season)
 features = [
     'Age', 'Career_G', 'Career_HR', 'Career_SB',
-    'OBP_3yr', 'SLG_3yr', 'WAR', 'Is_Rookie', 'Injured_Season'
+    'OBP_3yr', 'SLG_3yr', 'WAR', 'Is_Rookie', 'Injured_Season',
+    'BB_rate', 'K_rate',
 ]
 target = 'Next_WAR'
 
@@ -105,7 +114,12 @@ model.fit(X_train_scaled, y_train)
 joblib.dump(model, "war_predictor_model_INJURY_ADJUSTED.pkl")
 joblib.dump(scaler, "scaler_war_INJURY_ADJUSTED.pkl")
 joblib.dump(
-    {'league_avg_obp': league_avg_obp, 'league_avg_slg': league_avg_slg},
+    {
+        'league_avg_obp': league_avg_obp,
+        'league_avg_slg': league_avg_slg,
+        'league_avg_bb_rate': league_avg_bb_rate,
+        'league_avg_k_rate': league_avg_k_rate,
+    },
     "league_avgs_INJURY_ADJUSTED.pkl"
 )
 
