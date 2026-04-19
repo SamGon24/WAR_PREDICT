@@ -10,7 +10,7 @@ import pandas as pd
 # Ordered feature list expected by the model
 FEATURES = [
     'Age', 'Career_G', 'Career_HR', 'Career_SB',
-    'OBP_3yr', 'SLG_3yr', 'WAR', 'Is_Rookie', 'Injured_Season',
+    'OBP_3yr', 'SLG_3yr', 'OPS_plus_3yr', 'WAR', 'Is_Rookie', 'Injured_Season',
     'BB_rate', 'K_rate',
 ]
 
@@ -79,6 +79,23 @@ def prepare_prediction_data(df, league_avgs):
     # Plate discipline rates
     latest['BB_rate'] = latest['BB'] / latest['PA']
     latest['K_rate'] = latest['SO'] / latest['PA']
+
+    # 3-year rolling OPS+ (park- and league-adjusted), excluding injured seasons
+    df['OPS_plus_healthy'] = df['OPS+'].where(df['Injured_Season'] == 0)
+    ops_plus_3yr = (
+        df.groupby('Player')['OPS_plus_healthy']
+        .apply(lambda x: x.rolling(3, min_periods=1).mean())
+        .reset_index(level=0, drop=True)
+    )
+    ops_plus_3yr = ops_plus_3yr.groupby(df['Player']).transform(lambda x: x.fillna(x.mean()))
+    latest['OPS_plus_3yr'] = (
+        df.assign(OPS_plus_3yr=ops_plus_3yr)
+        .sort_values(['Player', 'Year'])
+        .groupby('Player')['OPS_plus_3yr']
+        .last()
+        .reindex(latest['Player'].values)
+        .values
+    )
 
     # Impute rookies with league-average rates and zero career counting stats
     rookie_mask = latest['Is_Rookie'] == 1

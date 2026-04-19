@@ -63,6 +63,15 @@ def create_features(df):
     df['BB_rate'] = df['BB'] / df['PA']
     df['K_rate'] = df['SO'] / df['PA']
 
+    # 3-year rolling OPS+ (park- and league-adjusted), excluding injured seasons
+    df['OPS_plus_healthy'] = df['OPS+'].where(df['Injured_Season'] == 0)
+    df['OPS_plus_3yr'] = df.groupby('Player')['OPS_plus_healthy'].transform(
+        lambda x: x.rolling(3, min_periods=1).mean()
+    )
+    df['OPS_plus_3yr'] = df.groupby('Player')['OPS_plus_3yr'].transform(
+        lambda x: x.fillna(x.mean())
+    )
+
     # Age for next season
     df['Age'] = df['Age'] + 1
     
@@ -89,7 +98,7 @@ test = test.groupby('Player', group_keys=False).apply(create_features)
 # Final features (add Is_Rookie and Injured_Season)
 features = [
     'Age', 'Career_G', 'Career_HR', 'Career_SB',
-    'OBP_3yr', 'SLG_3yr', 'WAR', 'Is_Rookie', 'Injured_Season',
+    'OBP_3yr', 'SLG_3yr', 'OPS_plus_3yr', 'WAR', 'Is_Rookie', 'Injured_Season',
     'BB_rate', 'K_rate',
 ]
 target = 'Next_WAR'
