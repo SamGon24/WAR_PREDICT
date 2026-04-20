@@ -5,12 +5,6 @@ __pycache__/
 venv/
 .env
 
-# Model artifacts
-*.pkl
-
-# Datasets
-*.csv
-
 # OS
 .DS_Store
 
