@@ -10,7 +10,8 @@ import pandas as pd
 # Ordered feature list expected by the model
 FEATURES = [
     'Age', 'Career_G', 'Career_HR', 'Career_SB',
-    'OBP_3yr', 'SLG_3yr', 'WAR', 'Is_Rookie', 'Injured_Season',
+    'OBP_3yr', 'SLG_3yr', 'OPS_plus_3yr', 'WAR', 'WAR_trend', 'Peak_WAR',
+    'Is_Rookie', 'Injured_Season', 'BB_rate', 'K_rate',
 ]
 
 
@@ -75,10 +76,50 @@ def prepare_prediction_data(df, league_avgs):
     # Rookie flag: player has only one season of MLB data
     latest['Is_Rookie'] = (latest['Career_G'] == latest['G']).astype(int)
 
+    # Plate discipline rates
+    latest['BB_rate'] = latest['BB'] / latest['PA']
+    latest['K_rate'] = latest['SO'] / latest['PA']
+
+    # 3-year rolling OPS+ (park- and league-adjusted), excluding injured seasons
+    df['OPS_plus_healthy'] = df['OPS+'].where(df['Injured_Season'] == 0)
+    ops_plus_3yr = (
+        df.groupby('Player')['OPS_plus_healthy']
+        .apply(lambda x: x.rolling(3, min_periods=1).mean())
+        .reset_index(level=0, drop=True)
+    )
+    ops_plus_3yr = ops_plus_3yr.groupby(df['Player']).transform(lambda x: x.fillna(x.mean()))
+    latest['OPS_plus_3yr'] = (
+        df.assign(OPS_plus_3yr=ops_plus_3yr)
+        .sort_values(['Player', 'Year'])
+        .groupby('Player')['OPS_plus_3yr']
+        .last()
+        .reindex(latest['Player'].values)
+        .values
+    )
+
+    # WAR trajectory: change vs two seasons ago (0 if insufficient history)
+    war_sorted = df.sort_values(['Player', 'Year']).groupby('Player')['WAR']
+    war_2yr_ago = war_sorted.apply(
+        lambda x: x.iloc[-3] if len(x) >= 3 else x.iloc[0]
+    )
+    latest['WAR_trend'] = (
+        war_sorted.last() - war_2yr_ago
+    ).fillna(0).reindex(latest['Player'].values).values
+
+    # Career peak WAR
+    latest['Peak_WAR'] = (
+        df.groupby('Player')['WAR'].max()
+        .reindex(latest['Player'].values)
+        .values
+    )
+
     # Impute rookies with league-average rates and zero career counting stats
     rookie_mask = latest['Is_Rookie'] == 1
     latest.loc[rookie_mask, 'OBP_3yr'] = league_avgs['league_avg_obp']
     latest.loc[rookie_mask, 'SLG_3yr'] = league_avgs['league_avg_slg']
+    latest.loc[rookie_mask, 'BB_rate'] = league_avgs['league_avg_bb_rate']
+    latest.loc[rookie_mask, 'K_rate'] = league_avgs['league_avg_k_rate']
+    latest.loc[rookie_mask, 'WAR_trend'] = 0
     latest.loc[rookie_mask, ['Career_G', 'Career_HR', 'Career_SB']] = 0
 
     # Current-season injury flag (used as a model feature)
