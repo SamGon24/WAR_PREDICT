@@ -90,22 +90,29 @@ def index():
                 suggested_players=random.sample(players_with_images, min(5, len(players_with_images)))
             )
 
-        # Prepare input data for prediction
         X = player[FEATURES].values.reshape(1, -1)
         X_scaled = scaler.transform(X)
-
-        # Predict WAR
         predicted_war = model.predict(X_scaled)[0]
-        
-        # Get x player image
+
         player_display_name = player.iloc[0]['Player']
-        player_image = get_player_image_path(player_display_name)
+
+        # WAR history for chart (exclude 2020 COVID season)
+        history = (
+            data[(data['Player'] == player_display_name) & (data['Year'] != 2020)]
+            .sort_values('Year')[['Year', 'WAR', 'G', 'PA']]
+        )
+        war_history = history[['Year', 'WAR']].values.tolist()
+        injured_years = history[
+            (history['G'] < 50) | (history['PA'] < 200)
+        ]['Year'].tolist()
 
         return render_template(
-            "result.html", 
+            "result.html",
             player=player_display_name,
             war=round(predicted_war, 2),
-            player_image=player_image
+            player_image=get_player_image_path(player_display_name),
+            war_history=war_history,
+            injured_years=injured_years,
         )
 
     # GET request show form with 5 random suggestions only players with images. I dont have all of them
