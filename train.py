@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import joblib
 
 # Load data
@@ -154,4 +154,12 @@ joblib.dump(
     "league_avgs_INJURY_ADJUSTED.pkl"
 )
 
-print("Model trained successfully with injury adjustment!")
+preds = model.predict(X_test_scaled)
+rmse  = np.sqrt(mean_squared_error(y_test, preds))
+mae   = mean_absolute_error(y_test, preds)
+r2    = r2_score(y_test, preds)
+
+print("Model trained successfully!")
+print(f"  Test RMSE : {rmse:.4f}")
+print(f"  Test MAE  : {mae:.4f}")
+print(f"  Test R²   : {r2:.4f}")
