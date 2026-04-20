@@ -84,7 +84,17 @@ def create_features(df):
 
     # Age for next season
     df['Age'] = df['Age'] + 1
-    
+
+    # Non-linear age curve: distance from peak age (27), squared
+    df['Age_from_peak'] = (df['Age'] - 27) ** 2
+
+    # Isolated power: strips singles out of SLG
+    df['ISO'] = df['SLG'] - df['BA']
+
+    # Stolen base efficiency (0 if no attempts)
+    df['SB_pct'] = df['SB'] / (df['SB'] + df['CS']).replace(0, float('nan'))
+    df['SB_pct'] = df['SB_pct'].fillna(0)
+
     # Mark rookies (first MLB season)
     df['Is_Rookie'] = df.groupby('Player')['Year'].transform(
         lambda x: (x == x.min()).astype(int)
@@ -111,6 +121,7 @@ features = [
     'Age', 'Career_G', 'Career_HR', 'Career_SB',
     'OBP_3yr', 'SLG_3yr', 'OPS_plus_3yr', 'WAR', 'WAR_trend', 'Peak_WAR',
     'Is_Rookie', 'Injured_Season', 'BB_rate', 'K_rate',
+    'Age_from_peak', 'ISO', 'SB_pct',
 ]
 target = 'Next_WAR'
 

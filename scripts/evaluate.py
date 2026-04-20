@@ -66,6 +66,10 @@ def create_features(df):
     df['Peak_WAR']  = df.groupby('Player')['WAR'].transform(lambda x: x.expanding().max())
 
     df['Age'] = df['Age'] + 1
+    df['Age_from_peak'] = (df['Age'] - 27) ** 2
+    df['ISO']    = df['SLG'] - df['BA']
+    df['SB_pct'] = (df['SB'] / (df['SB'] + df['CS']).replace(0, float('nan'))).fillna(0)
+
     df['Is_Rookie'] = df.groupby('Player')['Year'].transform(lambda x: (x == x.min()).astype(int))
 
     df.loc[df['Is_Rookie'] == 1, 'OBP_3yr']  = league_avg_obp
@@ -74,6 +78,7 @@ def create_features(df):
     df.loc[df['Is_Rookie'] == 1, 'K_rate']   = league_avg_k_rate
     df.loc[df['Is_Rookie'] == 1, 'WAR_trend'] = 0
     df.loc[df['Is_Rookie'] == 1, 'Career_G']  = 0
+
     df.loc[df['Is_Rookie'] == 1, 'Career_HR'] = 0
     df.loc[df['Is_Rookie'] == 1, 'Career_SB'] = 0
 

@@ -12,6 +12,7 @@ FEATURES = [
     'Age', 'Career_G', 'Career_HR', 'Career_SB',
     'OBP_3yr', 'SLG_3yr', 'OPS_plus_3yr', 'WAR', 'WAR_trend', 'Peak_WAR',
     'Is_Rookie', 'Injured_Season', 'BB_rate', 'K_rate',
+    'Age_from_peak', 'ISO', 'SB_pct',
 ]
 
 
@@ -72,6 +73,16 @@ def prepare_prediction_data(df, league_avgs):
 
     # Age projection: predicting the next season
     latest['Age'] = latest['Age'] + 1
+
+    # Non-linear age curve: distance from peak age (27), squared
+    latest['Age_from_peak'] = (latest['Age'] - 27) ** 2
+
+    # Isolated power: strips singles out of SLG
+    latest['ISO'] = latest['SLG'] - latest['BA']
+
+    # Stolen base efficiency (0 if no attempts)
+    latest['SB_pct'] = latest['SB'] / (latest['SB'] + latest['CS']).replace(0, float('nan'))
+    latest['SB_pct'] = latest['SB_pct'].fillna(0)
 
     # Rookie flag: player has only one season of MLB data
     latest['Is_Rookie'] = (latest['Career_G'] == latest['G']).astype(int)
