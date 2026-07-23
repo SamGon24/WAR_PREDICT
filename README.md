@@ -2,7 +2,7 @@
 
 A machine learning web app that predicts a MLB hitter's **Wins Above Replacement (WAR)** for the 2025 season.
 
-Live at: **https://web-production-1a459.up.railway.app/**
+Live at: **https://war-predict.onrender.com/**
 
 ---
 
